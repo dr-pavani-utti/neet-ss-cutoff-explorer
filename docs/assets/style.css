@@ -150,5 +150,22 @@ svg.spark { display: block; }
 .spark-dot { fill: var(--accent); }
 .spark-you { stroke: var(--error); stroke-dasharray: 3 2; }
 .foot p { margin: 4px 0; }
-.foot .credit { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
-.foot .credit b { color: var(--fg); }
+.foot .credit { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 18px 0 4px; margin-top: 14px; border-top: 1px solid var(--border); font-size: 16px; color: var(--muted); }
+.foot .credit b { color: var(--fg); font-size: 18px; }
+.credit-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.credit-links { display: inline-flex; flex-wrap: wrap; gap: 4px 16px; margin-left: 6px; }
+.credit-links button.link { font-size: 16px; padding: 0; }
+.credit-issue { padding: 8px 16px; border: 1px solid var(--accent); border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap; }
+.credit-issue:hover { background: var(--accent); color: #fff; }
+
+/* First-visit tour: dim everything except the spotlight; the page stays clickable. */
+.tour-spot { position: fixed; z-index: 60; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--accent), 0 0 0 9999px rgb(0 0 0 / .55); transition: all .25s ease; }
+.tour-card { position: fixed; z-index: 61; width: min(340px, calc(100vw - 16px)); background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 10px 30px rgb(0 0 0 / .3); transition: top .25s ease, left .25s ease; }
+.tour-card strong { font-size: 15px; }
+.tour-card p { margin: 6px 0 12px; color: var(--muted); font-size: 14px; }
+.tour-nav { display: flex; align-items: center; gap: 10px; }
+.tour-dots { display: flex; gap: 5px; margin-right: auto; }
+.tour-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+.tour-dots i.on { background: var(--accent); }
+.tour-btn { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.tour-btn.ghost { background: none; color: var(--accent); }

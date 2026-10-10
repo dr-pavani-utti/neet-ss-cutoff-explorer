@@ -15,7 +15,7 @@ const VIEWS = [
 const ROUND_COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
 const REPO = "https://github.com/dr-pavani-utti/neet-ss-cutoff-explorer";
 const CONTRIBUTOR = {
-  name: "Pavani Utti",
+  name: "Dr. Pavani Utti",
   linkedin: "https://www.linkedin.com/in/dr-pavani-utti/",
   portfolio: "https://dr-pavani-utti.github.io/portfolio/",
 };
@@ -223,6 +223,7 @@ function renderProfile() {
     }),
     inputCtl("Your rank", "rank", { type: "number", min: 1, inputmode: "numeric", placeholder: "e.g. 850" }),
   );
+  ["year", "group", "rank"].forEach((id, i) => (el.children[i].dataset.tour = id));
 }
 
 // ------------------------------------------------------------------ render shell
@@ -797,6 +798,60 @@ const RENDERERS = {
   about: { title: "About the data", lede: "Built from official MCC NEET SS allotment PDFs. No database: the data is static JSON shipped with the site.", controls: null, results: aboutResults },
 };
 
+// ------------------------------------------------------------------ first-visit tour
+
+const TOUR_KEY = "neetss.tour";
+const TOUR = [
+  { target: '[data-tour="year"]', title: "1 · Pick a year", text: "Choose the counselling year you want to explore. 2023, 2024 and 2025 are available." },
+  { target: '[data-tour="group"]', title: "2 · Choose your exam group", text: "NEET SS ranks are issued per group (Medical, Surgical, Paediatric…). Every map, table and chart filters by it." },
+  { target: '[data-tour="rank"]', title: "3 · Enter your rank", text: "Optional, but it powers the predictor: seats that closed at or after your rank get highlighted everywhere." },
+  { target: "#tabs", title: "4 · Explore", text: "Start with the State map, check exact closing ranks in the Cutoff table, then see your chances in the Rank predictor." },
+];
+
+// Spotlight + card. The page stays interactive, so users can fill the highlighted control right away.
+function startTour() {
+  if ($(".tour-card")) return;
+  localStorage.setItem(TOUR_KEY, "1"); // shown once, even if the tab is closed mid-tour
+  let step = 0, raf = 0;
+  const spot = h("div", { class: "tour-spot" });
+  const card = h("div", { class: "tour-card", role: "dialog", "aria-live": "polite" });
+  const close = () => { cancelAnimationFrame(raf); spot.remove(); card.remove(); document.removeEventListener("keydown", onKey); };
+  const go = (n) => { if (n >= TOUR.length) return close(); step = Math.max(0, n); paint(); };
+  const onKey = (e) => { if (e.key === "Escape") close(); else if (e.key === "ArrowRight") go(step + 1); else if (e.key === "ArrowLeft") go(step - 1); };
+  function paint() {
+    const s = TOUR[step];
+    card.replaceChildren(
+      h("strong", {}, s.title),
+      h("p", {}, s.text),
+      h("div", { class: "tour-nav" },
+        h("span", { class: "tour-dots" }, TOUR.map((_, i) => h("i", { class: i === step ? "on" : "" }))),
+        h("button", { class: "link", onclick: close }, "Skip"),
+        step > 0 ? h("button", { class: "tour-btn ghost", onclick: () => go(step - 1) }, "Back") : null,
+        h("button", { class: "tour-btn", onclick: () => go(step + 1) }, step === TOUR.length - 1 ? "Get started" : "Next"),
+      ),
+    );
+    $(s.target)?.scrollIntoView({ block: "nearest" });
+  }
+  // Re-measure every frame: the profile bar re-renders on input, and layout shifts on resize/scroll.
+  function place() {
+    const el = $(TOUR[step].target);
+    if (el) {
+      const r = el.getBoundingClientRect(), pad = 6;
+      Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + 2 * pad}px`, height: `${r.height + 2 * pad}px` });
+      const cw = card.offsetWidth, ch = card.offsetHeight;
+      const left = Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), window.innerWidth - cw - 8);
+      const below = r.bottom + pad + 12;
+      const top = below + ch < window.innerHeight ? below : Math.max(8, r.top - pad - 12 - ch);
+      Object.assign(card.style, { left: `${left}px`, top: `${top}px` });
+    }
+    raf = requestAnimationFrame(place);
+  }
+  document.body.append(spot, card);
+  document.addEventListener("keydown", onKey);
+  paint();
+  place();
+}
+
 // ------------------------------------------------------------------ tooltip
 
 function initTooltip() {
@@ -831,7 +886,10 @@ async function loadYear(year) {
   const ext = (href, label) => h("a", { href, target: "_blank", rel: "noopener" }, label);
   $("#foot").replaceChildren(
     h("p", {}, `${app.data.year}: ${fmt(app.data.allotments.length)} allotments, ${app.data.institutes.length} institutes, ${app.data.rounds.map((r) => r.label).join(" · ")}. Unofficial; verify with `, ext("https://mcc.nic.in/super-speciality-counselling/", "MCC"), " before choice filling."),
-    h("p", { class: "credit" }, "Built by ", h("b", {}, CONTRIBUTOR.name), " · ", ext(CONTRIBUTOR.linkedin, "LinkedIn"), " · ", ext(CONTRIBUTOR.portfolio, "Portfolio"), " · ", ext(REPO, "GitHub"), " · ", ext(`${REPO}/issues`, "Report an issue"), " · ", ext(`${REPO}/tree/main/raw`, "Raw PDFs")),
+    h("div", { class: "credit" },
+      h("div", { class: "credit-who" }, "Built by ", h("b", {}, CONTRIBUTOR.name), h("span", { class: "credit-links" }, ext(CONTRIBUTOR.linkedin, "LinkedIn"), ext(CONTRIBUTOR.portfolio, "Portfolio"), ext(REPO, "GitHub"), h("button", { class: "link", onclick: startTour }, "Take the tour"))),
+      h("a", { class: "credit-issue", href: `${REPO}/issues`, target: "_blank", rel: "noopener" }, "Report an issue"),
+    ),
   );
 }
 
@@ -853,6 +911,7 @@ async function boot() {
   }
   writeHash();
   render();
+  if (!localStorage.getItem(TOUR_KEY)) startTour();
   window.addEventListener("hashchange", async () => {
     readHash();
     if (!app.index.years.some((y) => y.year === app.p.year)) app.p.year = app.data.year;
