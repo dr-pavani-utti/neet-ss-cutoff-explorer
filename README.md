@@ -1,0 +1,54 @@
+# NEET SS Cutoff Explorer
+
+Static website showing NEET Super Speciality counselling closing ranks for every course × institute × round, built from the official MCC allotment PDFs. There's no backend and no database: the PDFs are converted once into compact JSON that GitHub Pages serves along with the site.
+
+## Layout
+
+```
+raw/<year>/*.pdf          original MCC allotment PDFs (2023, 2024, 2025: round1, round2, stray/special)
+scripts/sources.json      which PDF is which round, per year
+scripts/build_data.py     PDF -> docs/data/<year>.json (+ CSV)
+scripts/build_map.py      state boundaries -> docs/assets/india-map.json (run once; ~58 KB)
+docs/                     the website (GitHub Pages root)
+  index.html, assets/     vanilla JS + SVG, no build step; caduceus.svg logo, india-map.json
+  data/index.json         list of available years
+  data/<year>.json        lookup tables + allotment rows (450–580 KB each, ~105–130 KB gzipped)
+  data/<year>-allotments.csv  flat download
+```
+
+## Rebuild data
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python scripts/build_data.py        # all years
+.venv/bin/python scripts/build_data.py 2025   # one year
+```
+
+The parser reads table headers, so it handles every layout MCC uses: single-round lists (`SNo | Rank | Qualifying Exam | Allotted Institute | [Quota] | Course | Remarks`) and upgrade lists, which repeat a `Rank … Remarks` block for each earlier round before the new allotment (Round 2 has one earlier block; the 2023/2024 stray and special rounds have two). Words that the PDF wraps mid-word ("ANAESTHESIOL OGY GROUP") are matched on letters only. If serial numbers in a PDF are not contiguous `1..N` the build fails, so rows can't be dropped without you noticing. Extracted tables are cached in `build/`.
+
+## Adding a year (e.g. 2026)
+
+1. Put the PDFs in `raw/2026/`.
+2. Add a `"2026"` entry to `scripts/sources.json`, listing rounds in counselling order (an upgrade round's earlier-round blocks must match the rounds listed before it).
+3. Run `scripts/build_data.py 2026` and commit `docs/data/`.
+
+The year picker on the site comes from `docs/data/index.json`. The Year-on-year view and the predictor's "Same seat, other years" column match a seat across years by group + course + institute name + PIN code, and compare rounds by position (1st, 2nd, last).
+
+Course names are normalised by `SPECIALITY` in `build_data.py` (e.g. "DNBSS Hematology" and "D.M. Clinical Haematology" both become *Clinical Haematology*). New spellings that aren't in the map show up unchanged; add them to the map to merge them.
+
+## Preview locally
+
+```sh
+python3 -m http.server 8000 --directory docs   # open http://localhost:8000
+```
+
+## Publish
+
+GitHub repo → Settings → Pages → *Deploy from a branch* → `main`, folder `/docs`.
+
+## Data caveats
+
+- Ranks are issued per exam group. All views filter by group.
+- The 2023–2025 PDFs don't print the allotted category per row, so cutoffs combine all categories. If a future PDF adds a `Category` column, the parser picks it up and the site shows a Category filter.
+- Round 2 closing ranks count only seats allotted in Round 2 (upgrades and fresh allotments), not seats retained from Round 1.
+- Unofficial. Verify with MCC before choice filling.

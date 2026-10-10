@@ -1,0 +1,28 @@
+{
+ "years": [
+  {
+   "year": "2025",
+   "rounds": [
+    "Round 1",
+    "Round 2",
+    "Special Stray"
+   ]
+  },
+  {
+   "year": "2024",
+   "rounds": [
+    "Round 1",
+    "Round 2",
+    "Stray Round"
+   ]
+  },
+  {
+   "year": "2023",
+   "rounds": [
+    "Round 1",
+    "Round 2",
+    "Special Round"
+   ]
+  }
+ ]
+}

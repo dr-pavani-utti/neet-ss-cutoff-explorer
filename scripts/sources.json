@@ -1,0 +1,23 @@
+{
+  "2025": {
+    "rounds": [
+      { "id": "R1", "label": "Round 1", "file": "raw/2025/round1.pdf" },
+      { "id": "R2", "label": "Round 2", "file": "raw/2025/round2.pdf" },
+      { "id": "SSV", "label": "Special Stray", "file": "raw/2025/stray.pdf" }
+    ]
+  },
+  "2024": {
+    "rounds": [
+      { "id": "R1", "label": "Round 1", "file": "raw/2024/round1.pdf" },
+      { "id": "R2", "label": "Round 2", "file": "raw/2024/round2.pdf" },
+      { "id": "SR", "label": "Stray Round", "file": "raw/2024/stray.pdf" }
+    ]
+  },
+  "2023": {
+    "rounds": [
+      { "id": "R1", "label": "Round 1", "file": "raw/2023/round1.pdf" },
+      { "id": "R2", "label": "Round 2", "file": "raw/2023/round2.pdf" },
+      { "id": "SPL", "label": "Special Round", "file": "raw/2023/special.pdf" }
+    ]
+  }
+}
