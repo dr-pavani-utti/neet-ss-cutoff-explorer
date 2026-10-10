@@ -149,3 +149,6 @@ svg.spark { display: block; }
 .spark-line { fill: none; stroke: var(--accent); stroke-width: 1.8; }
 .spark-dot { fill: var(--accent); }
 .spark-you { stroke: var(--error); stroke-dasharray: 3 2; }
+.foot p { margin: 4px 0; }
+.foot .credit { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
+.foot .credit b { color: var(--fg); }

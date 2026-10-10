@@ -13,6 +13,12 @@ const VIEWS = [
   ["about", "About data"],
 ];
 const ROUND_COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
+const REPO = "https://github.com/dr-pavani-utti/neet-ss-cutoff-explorer";
+const CONTRIBUTOR = {
+  name: "Pavani Utti",
+  linkedin: "https://www.linkedin.com/in/dr-pavani-utti/",
+  portfolio: "https://dr-pavani-utti.github.io/portfolio/",
+};
 
 const app = { index: null, years: {}, data: null, model: null, view: VIEWS[0][0], p: {} };
 
@@ -736,14 +742,30 @@ function rankResults() {
 // ------------------------------------------------------------------ view: about
 
 function aboutResults() {
-  const d = app.data;
+  const years = app.index.years.map((y) => y.year).filter((y) => app.years[y]);
+  const rows = years.flatMap((y) => app.years[y].data.sources.map((s, i) => ({ y, s, round: app.years[y].data.rounds.find((r) => r.id === s.round).label, first: i === 0, span: app.years[y].data.sources.length })));
+  const total = (k) => fmt(rows.reduce((n, { s }) => n + s[k], 0));
+  const ext = (href, label) => h("a", { href, target: "_blank", rel: "noopener" }, label);
   return h(
     "div",
     { class: "prose" },
-    h("h3", {}, `Sources for ${d.year}`),
-    h("table", { class: "seats compact" },
-      h("thead", {}, h("tr", {}, h("th", {}, "Round"), h("th", {}, "PDF"), h("th", { class: "num" }, "Pages"), h("th", { class: "num" }, "Rows"), h("th", { class: "num" }, "Allotments used"))),
-      h("tbody", {}, d.sources.map((s) => h("tr", {}, h("td", {}, d.rounds.find((r) => r.id === s.round).label), h("td", {}, s.file.split("/").pop()), h("td", { class: "num" }, s.pages), h("td", { class: "num" }, fmt(s.rows)), h("td", { class: "num" }, fmt(s.allotments)))))),
+    h("h3", {}, "Source PDFs"),
+    h("p", {}, "Every number on this site comes from the official MCC NEET SS allotment lists below. The original PDFs are in the ", ext(`${REPO}/tree/main/raw`, "raw folder on GitHub"), "."),
+    h("div", { class: "scroll" }, h("table", { class: "seats compact" },
+      h("thead", {}, h("tr", {}, h("th", {}, "Year"), h("th", {}, "Round"), h("th", {}, "PDF"), h("th", { class: "num" }, "Pages"), h("th", { class: "num" }, "Rows"), h("th", { class: "num" }, "Allotments used"), h("th", {}, "Download"))),
+      h("tbody", {}, rows.map(({ y, s, round, first, span }) => h("tr", {},
+        first ? h("td", { rowspan: span }, h("b", {}, y)) : null,
+        h("td", {}, round),
+        h("td", {}, ext(`${REPO}/blob/main/${s.file}`, s.file.split("/").pop())),
+        h("td", { class: "num" }, s.pages),
+        h("td", { class: "num" }, fmt(s.rows)),
+        h("td", { class: "num" }, fmt(s.allotments)),
+        first ? h("td", { rowspan: span }, h("a", { href: `data/${y}-allotments.csv`, download: true }, `${y}-allotments.csv`)) : null,
+      ))),
+      h("tfoot", {}, h("tr", {}, h("th", { colspan: 3 }, `All ${years.length} years`), h("th", { class: "num" }, total("pages")), h("th", { class: "num" }, total("rows")), h("th", { class: "num" }, total("allotments")), h("th", {}))),
+    )),
+    years.length < app.index.years.length ? h("p", { class: "muted small" }, "Loading remaining years…") : null,
+    h("p", { class: "muted small" }, "“Rows” are lines in the PDF; Round 2 and stray/special lists repeat earlier-round seat holders, so only seats newly allotted in that round count as “allotments used”."),
     h("h3", {}, "How to read the numbers"),
     h("ul", {},
       h("li", {}, h("b", {}, "Ranks are per group. "), "Medical group rank 500 and Surgical group rank 500 are different candidates. Always pick your group first."),
@@ -753,7 +775,10 @@ function aboutResults() {
       h("li", {}, h("b", {}, "Chance bands "), `are a rule of thumb: Safe if the seat closed ≥ ${Math.round((SAFE - 1) * 100)}% past your rank, Likely if at/after it, Reach if within ${Math.round((1 - REACH) * 100)}% before it. Seat matrices and competition change every year.`),
       h("li", {}, "Institute names are cleaned from MCC's address strings; hover a name to see the original address."),
     ),
-    h("p", {}, "Download the raw allotment rows: ", h("a", { href: `data/${d.year}-allotments.csv`, download: true }, `${d.year}-allotments.csv`), "."),
+    h("h3", {}, "Found a mistake or want a feature?"),
+    h("p", {}, "Open an issue on ", ext(`${REPO}/issues`, "GitHub Issues"), ": a wrong rank, a misnamed institute, a missing year, or an idea for a new view. The code and data pipeline are in the ", ext(REPO, "GitHub repository"), "."),
+    h("h3", {}, "Contributor"),
+    h("p", {}, h("b", {}, CONTRIBUTOR.name), " · ", ext(CONTRIBUTOR.linkedin, "LinkedIn"), " · ", ext(CONTRIBUTOR.portfolio, "Portfolio")),
     h("h3", {}, "Credits"),
     h("ul", {},
       h("li", {}, "State boundaries: ", h("a", { href: "https://github.com/datta07/INDIAN-SHAPEFILES", target: "_blank", rel: "noopener" }, "datta07/INDIAN-SHAPEFILES"), " (MIT), simplified."),
@@ -803,9 +828,10 @@ async function loadYear(year) {
   app.data = app.years[year].data;
   app.model = app.years[year].model;
   if (app.p.g && !app.data.groups.includes(app.p.g)) app.p.g = "";
+  const ext = (href, label) => h("a", { href, target: "_blank", rel: "noopener" }, label);
   $("#foot").replaceChildren(
-    h("span", {}, `${app.data.year}: ${fmt(app.data.allotments.length)} allotments, ${app.data.institutes.length} institutes, ${app.data.rounds.map((r) => r.label).join(" · ")}.`),
-    h("span", {}, " Unofficial; verify with ", h("a", { href: "https://mcc.nic.in/super-speciality-counselling/", target: "_blank", rel: "noopener" }, "MCC"), " before choice filling."),
+    h("p", {}, `${app.data.year}: ${fmt(app.data.allotments.length)} allotments, ${app.data.institutes.length} institutes, ${app.data.rounds.map((r) => r.label).join(" · ")}. Unofficial; verify with `, ext("https://mcc.nic.in/super-speciality-counselling/", "MCC"), " before choice filling."),
+    h("p", { class: "credit" }, "Built by ", h("b", {}, CONTRIBUTOR.name), " · ", ext(CONTRIBUTOR.linkedin, "LinkedIn"), " · ", ext(CONTRIBUTOR.portfolio, "Portfolio"), " · ", ext(REPO, "GitHub"), " · ", ext(`${REPO}/issues`, "Report an issue"), " · ", ext(`${REPO}/tree/main/raw`, "Raw PDFs")),
   );
 }
 
@@ -819,7 +845,7 @@ async function boot() {
     await loadYear(app.p.year);
     // Other years feed the year-on-year view and the predictor's "other years" column.
     Promise.all(app.index.years.map((y) => fetchYear(y.year)))
-      .then(() => { if (app.view === "trends" || app.view === "predict") renderResults(); })
+      .then(() => { if (["trends", "predict", "about"].includes(app.view)) renderResults(); })
       .catch((err) => console.error(err));
   } catch (err) {
     $("#view").replaceChildren(h("div", { class: "empty" }, h("strong", {}, "Could not load data"), h("p", {}, String(err))));
