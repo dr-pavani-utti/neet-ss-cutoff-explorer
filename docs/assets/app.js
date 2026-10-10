@@ -151,10 +151,66 @@ function writeHash() {
 }
 
 function setParam(changes, { full = false } = {}) {
+  trackChange(changes);
   Object.assign(app.p, changes);
   writeHash();
   if (full) render();
   else renderResults();
+}
+
+// ------------------------------------------------------------------ analytics (Umami, cookieless)
+
+// Calls made before the deferred Umami script loads are queued; if it never loads (ad blocker,
+// local preview outside data-domains) the queue is simply dropped.
+const trackQueue = [];
+function track(...args) {
+  if (window.umami) window.umami.track(...args);
+  else if (trackQueue.length < 50) trackQueue.push(args);
+}
+document.querySelector("script[data-website-id]")?.addEventListener("load", () => {
+  while (trackQueue.length) window.umami?.track(...trackQueue.shift());
+});
+
+// One pageview per tab; the URL is the bare tab name so ranks and filters never reach the stats.
+let trackedView = null;
+function trackView() {
+  if (trackedView === app.view) return;
+  trackedView = app.view;
+  const title = VIEWS.find(([v]) => v === app.view)[1];
+  track((props) => ({ ...props, url: `/${app.view}`, title }));
+}
+
+// Outbound links (footer, About, MCC) and the static per-year CSV downloads.
+document.addEventListener("click", (e) => {
+  const a = e.target.closest?.("a[href]");
+  if (!a) return;
+  if (a.hasAttribute("download")) track("download-csv", { view: app.view, file: a.getAttribute("href").split("/").pop() });
+  else if (a.target === "_blank") track("outbound", { label: a.textContent.trim().slice(0, 40), host: new URL(a.href).hostname });
+});
+
+const RANK_BANDS = [250, 500, 1000, 2000, 3000, 5000];
+const rankBand = (r) => {
+  const hi = RANK_BANDS.find((b) => r <= b);
+  return hi ? `${(RANK_BANDS[RANK_BANDS.indexOf(hi) - 1] || 0) + 1}-${hi}` : `${RANK_BANDS.at(-1)}+`;
+};
+const FILTER_KEYS = { deg: "degree", spec: "speciality", state: "state", quota: "quota", cat: "category", round: "round", rpos: "round", metric: "metric" };
+
+// Only the first key is the user's action; the rest are side effects (e.g. clearing spec on group change).
+let typingTimer;
+function trackChange(changes) {
+  const [key, value] = Object.entries(changes)[0] || [];
+  const view = app.view;
+  if (key === "g" && value) track("select-group", { group: groupLabel(value), year: app.p.year });
+  else if (key === "rank" || key === "q") {
+    clearTimeout(typingTimer); // wait until the user stops typing
+    typingTimer = setTimeout(() => {
+      const r = parseInt(value, 10);
+      if (key === "rank" && r > 0) track("enter-rank", { band: rankBand(r), group: app.p.g ? groupLabel(app.p.g) : "none" });
+      if (key === "q" && value.trim()) track("search", { view, term: value.trim().toLowerCase().slice(0, 40) });
+    }, 1500);
+  } else if (key === "sort") track("sort", { view, column: value });
+  else if (key === "all") track("show-all", { view });
+  else if (FILTER_KEYS[key] && value) track("filter", { view, filter: FILTER_KEYS[key], value });
 }
 
 // ------------------------------------------------------------------ controls
@@ -212,6 +268,7 @@ function renderProfile() {
       all: null,
       onchange: async (v) => {
         app.p.year = v;
+        track("select-year", { year: v });
         writeHash();
         await loadYear(v);
         render();
@@ -239,6 +296,7 @@ function render() {
   const def = RENDERERS[app.view];
   view.replaceChildren(h("section", { class: "head" }, h("h2", {}, def.title), h("p", { class: "lede" }, def.lede)), def.controls ? def.controls() : "", h("div", { id: "results" }));
   renderResults();
+  trackView();
 }
 
 function renderResults() {
@@ -405,6 +463,7 @@ function gaugeSvg(s, rank, max) {
 }
 
 function downloadCsv(rows) {
+  track("download-csv", { view: app.view, year: app.data.year, rows: rows.length });
   const rounds = app.data.rounds;
   const head = ["Group", "Degree", "Speciality", "Institute", "State", "Quota", ...rounds.flatMap((r) => [`${r.label} closing`, `${r.label} opening`, `${r.label} seats`]), "Address"];
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -809,14 +868,18 @@ const TOUR = [
 ];
 
 // Spotlight + card. The page stays interactive, so users can fill the highlighted control right away.
-function startTour() {
+function startTour(source = "first-visit") {
   if ($(".tour-card")) return;
   localStorage.setItem(TOUR_KEY, "1"); // shown once, even if the tab is closed mid-tour
   let step = 0, raf = 0;
   const spot = h("div", { class: "tour-spot" });
   const card = h("div", { class: "tour-card", role: "dialog", "aria-live": "polite" });
-  const close = () => { cancelAnimationFrame(raf); spot.remove(); card.remove(); document.removeEventListener("keydown", onKey); };
-  const go = (n) => { if (n >= TOUR.length) return close(); step = Math.max(0, n); paint(); };
+  track("tour-start", { source });
+  const close = (outcome = "skipped") => {
+    track("tour-end", { outcome, step: step + 1 });
+    cancelAnimationFrame(raf); spot.remove(); card.remove(); document.removeEventListener("keydown", onKey);
+  };
+  const go = (n) => { if (n >= TOUR.length) return close("finished"); step = Math.max(0, n); paint(); };
   const onKey = (e) => { if (e.key === "Escape") close(); else if (e.key === "ArrowRight") go(step + 1); else if (e.key === "ArrowLeft") go(step - 1); };
   function paint() {
     const s = TOUR[step];
@@ -825,7 +888,7 @@ function startTour() {
       h("p", {}, s.text),
       h("div", { class: "tour-nav" },
         h("span", { class: "tour-dots" }, TOUR.map((_, i) => h("i", { class: i === step ? "on" : "" }))),
-        h("button", { class: "link", onclick: close }, "Skip"),
+        h("button", { class: "link", onclick: () => close() }, "Skip"),
         step > 0 ? h("button", { class: "tour-btn ghost", onclick: () => go(step - 1) }, "Back") : null,
         h("button", { class: "tour-btn", onclick: () => go(step + 1) }, step === TOUR.length - 1 ? "Get started" : "Next"),
       ),
@@ -887,7 +950,7 @@ async function loadYear(year) {
   $("#foot").replaceChildren(
     h("p", {}, `${app.data.year}: ${fmt(app.data.allotments.length)} allotments, ${app.data.institutes.length} institutes, ${app.data.rounds.map((r) => r.label).join(" · ")}. Unofficial; verify with `, ext("https://mcc.nic.in/super-speciality-counselling/", "MCC"), " before choice filling."),
     h("div", { class: "credit" },
-      h("div", { class: "credit-who" }, "Built by ", h("b", {}, CONTRIBUTOR.name), h("span", { class: "credit-links" }, ext(CONTRIBUTOR.linkedin, "LinkedIn"), ext(CONTRIBUTOR.portfolio, "Portfolio"), ext(REPO, "GitHub"), h("button", { class: "link", onclick: startTour }, "Take the tour"))),
+      h("div", { class: "credit-who" }, "Built by ", h("b", {}, CONTRIBUTOR.name), h("span", { class: "credit-links" }, ext(CONTRIBUTOR.linkedin, "LinkedIn"), ext(CONTRIBUTOR.portfolio, "Portfolio"), ext(REPO, "GitHub"), h("button", { class: "link", onclick: () => startTour("replay") }, "Take the tour"))),
       h("a", { class: "credit-issue", href: `${REPO}/issues`, target: "_blank", rel: "noopener" }, "Report an issue"),
     ),
   );
