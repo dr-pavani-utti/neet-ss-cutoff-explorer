@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/sitemap.xml

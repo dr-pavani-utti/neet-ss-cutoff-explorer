@@ -3,8 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NEET Super Speciality Cutoff Explorer</title>
-  <meta name="description" content="NEET Super Speciality counselling closing ranks by course, institute, round and state. Rank predictor and infographics built from official MCC allotment PDFs.">
+  <title>NEET SS Cutoff 2025, 2024, 2023: Closing Ranks &amp; Rank Predictor | NEET Super Speciality Cutoff Explorer</title>
+  <meta name="description" content="NEET Super Speciality (NEET SS) counselling closing ranks for every DM, MCh and DNB SS course, institute and round (2023–2025). State map, cutoff table, rank predictor and year-on-year trends from official MCC allotment PDFs.">
+  <meta name="keywords" content="NEET SS cutoff, NEET SS closing rank, NEET Super Speciality cutoff, MCC SS counselling, DM cutoff, MCh cutoff, DNB SS cutoff, NEET SS rank predictor">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="Dr. Pavani Utti">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="canonical" href="https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/">
+  <link rel="sitemap" type="application/xml" href="sitemap.xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NEET Super Speciality Cutoff Explorer">
+  <meta property="og:title" content="NEET SS Cutoff Explorer: Closing Ranks &amp; Rank Predictor">
+  <meta property="og:description" content="Closing ranks for every NEET Super Speciality course, institute and round (2023–2025), from official MCC allotment lists.">
+  <meta property="og:url" content="https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/">
+  <meta property="og:locale" content="en_IN">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="NEET SS Cutoff Explorer: Closing Ranks &amp; Rank Predictor">
+  <meta name="twitter:description" content="Closing ranks for every NEET Super Speciality course, institute and round (2023–2025), from official MCC allotment lists.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "NEET Super Speciality Cutoff Explorer",
+        "url": "https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/",
+        "description": "NEET SS counselling closing ranks by course, institute, round and state, with a rank predictor and year-on-year trends.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any",
+        "inLanguage": "en-IN",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+        "author": { "@type": "Person", "name": "Dr. Pavani Utti", "url": "https://dr-pavani-utti.github.io/portfolio/" }
+      },
+      {
+        "@type": "Dataset",
+        "name": "NEET Super Speciality counselling allotments and closing ranks 2023–2025",
+        "description": "Seat allotments from MCC NEET SS counselling Round 1, Round 2 and stray/special rounds for 2023, 2024 and 2025, converted from the official allotment PDFs.",
+        "url": "https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/",
+        "isAccessibleForFree": true,
+        "temporalCoverage": "2023/2025",
+        "spatialCoverage": "India",
+        "creator": { "@type": "Person", "name": "Dr. Pavani Utti" },
+        "distribution": [
+          { "@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/data/2025-allotments.csv" },
+          { "@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/data/2024-allotments.csv" },
+          { "@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://dr-pavani-utti.github.io/neet-ss-cutoff-explorer/data/2023-allotments.csv" }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="icon" href="assets/caduceus.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/style.css">
   <!-- Umami (cookieless). Auto-tracking is off: assets/app.js sends one pageview per tab plus feature events.
@@ -23,7 +72,13 @@
     <div class="profile" id="profile"></div>
   </header>
   <nav class="tabs" id="tabs"></nav>
-  <main id="view" aria-live="polite"><p class="loading">Loading data…</p></main>
+  <main id="view" aria-live="polite"><p class="loading">Loading data…</p>
+    <noscript>
+      <h2>NEET SS closing ranks 2023–2025</h2>
+      <p>This site needs JavaScript. It shows NEET Super Speciality (DM, MCh, DNB SS) counselling closing ranks for every course, institute and round from the official MCC allotment lists: a state map, a cutoff table, a rank predictor, a speciality ladder, year-on-year trends and a rank lookup.</p>
+      <p>Download the data as CSV: <a href="data/2025-allotments.csv">2025</a>, <a href="data/2024-allotments.csv">2024</a>, <a href="data/2023-allotments.csv">2023</a>.</p>
+    </noscript>
+  </main>
   <footer class="foot" id="foot"></footer>
   <div class="tooltip" id="tooltip" hidden></div>
   <script type="module" src="assets/app.js"></script>

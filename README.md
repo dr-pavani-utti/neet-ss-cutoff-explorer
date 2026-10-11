@@ -14,6 +14,8 @@ docs/                     the website (GitHub Pages root)
   data/index.json         list of available years
   data/<year>.json        lookup tables + allotment rows (450–580 KB each, ~105–130 KB gzipped)
   data/<year>-allotments.csv  flat download
+  sitemap.xml, robots.txt     SEO; bump <lastmod> in sitemap.xml when data changes
+  google2cc8027b9bf0402d.html Google Search Console ownership verification (keep)
 ```
 
 ## Rebuild data
